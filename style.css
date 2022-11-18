@@ -40,6 +40,8 @@ li {
 }
 
 .input {
+  padding-left: 15px;
+  padding-right: 15px;
   width: 500px;
   height: 80px;
   border-radius: 10px;
@@ -120,7 +122,7 @@ li {
   transform: rotate(45deg);
 }
 
-.massege {
+.message {
   display: block;
   padding-left: 80px;
   margin-right: auto;

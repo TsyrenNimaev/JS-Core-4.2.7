@@ -21,6 +21,10 @@ class Create {
     //контейнер для списка репозиториев
     this.repositoriesList = this.createElement('ul', 'repositorie-list');
 
+    //контейнер для пустого результата
+    this.message = this.createElement('span', 'message');
+    this.message.textContent = 'No such repository';
+
     //отрисовываем элементы
     this.form.append(this.title);
     this.form.append(this.label);
@@ -51,12 +55,13 @@ class Create {
   //вывод информации
   showUserData(userData) {
     const repositoriesItems = this.createElement('li', 'repositories-items');
-    let closeBtn = this.createElement('button', 'close-btn'); //кнопка удаления
+    let closeButton = this.createElement('button', 'close-btn'); //кнопка удаления
     this.repositoriesList.append(repositoriesItems);
-    repositoriesItems.append(closeBtn);
+    repositoriesItems.append(closeButton);
     repositoriesItems.innerHTML += `Name: ${userData.name}<br><br> Owner: ${userData.owner.login}<br><br> Stars: ${userData.stargazers_count}<br><br>`;
     //удаляем элементы из списка по клику
     repositoriesItems.addEventListener('click', (element) => {
+      repositoriesItems.removeEventListener('click', element);
       if (!element.target.classList.contains('close-btn')) {
         return;
       }
@@ -75,26 +80,34 @@ class Create {
 
 class Search {
   constructor(create) {
-    this.create = create;
+    this.createUsers = create;
 
     //делаем задержку при вводе
-    this.create.input.addEventListener(
+    this.createUsers.input.addEventListener(
       'input',
       this.debounce(this.searchRepositories.bind(this), 500)
     );
   }
 
   async searchRepositories() {
-    if (this.create.input.value) {
-      this.create.clearDropdown(); //обновляем данные при вводе
+    if (this.createUsers.input.value) {
+      this.createUsers.clearDropdown(); //обновляем данные при вводе
       //проверяем поле ввода
       try {
         return await fetch(
-          `https://api.github.com/search/repositories?q=${this.create.input.value}stars%3A%3E0&sort=stars&order=desc&per_page=5`
+          `https://api.github.com/search/repositories?q=${this.createUsers.input.value}stars%3A%3E0&sort=stars&order=desc&per_page=5`
         ).then((response) => {
           response.json().then((response) => {
-            this.message(response.total_count);
-            response.items.forEach((user) => this.create.createUser(user));
+            if (response.total_count === 0) {
+              //если нет репозитория выводим сообщение
+              if (this.createUsers.message.style.display === 'none') {
+                this.createUsers.message.style.display = 'block';
+              }
+              this.message();
+            } else {
+              this.clearMessage();
+            }
+            response.items.forEach((user) => this.createUsers.createUser(user));
           });
         });
       } catch (error) {
@@ -102,17 +115,18 @@ class Search {
       }
     } else {
       //если поле ввода пустое, то удаляем элементы из выпадашки
-      this.create.clearDropdown();
+      this.createUsers.clearDropdown();
     }
   }
 
   //вывод сообщения, если ничего не найдено
-  message(count) {
-    if (count === 0) {
-      let massege = this.create.createElement('span', 'massege');
-      massege.textContent = 'No such repository';
-      this.create.form.append(massege);
-    }
+  message() {
+    this.createUsers.form.append(this.createUsers.message);
+  }
+
+  //скрываем сообщение
+  clearMessage() {
+    this.createUsers.message.style.display = 'none';
   }
 
   debounce(fn, debounceTime) {
